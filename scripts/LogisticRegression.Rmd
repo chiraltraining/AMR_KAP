@@ -1,0 +1,76 @@
+---
+title: "Ordinal Logistic Regression"
+output: html_document
+date: "2023-03-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Load packages 
+library(tidyverse) # data pre-processing 
+library(ordinal) # to perform modeling 
+library(MASS) # polr function 
+library(haven) # modeling 
+library(forcats) # factor reordering 
+library(gtsummary) # to create publication-ready tables 
+library(flextable) # to design tables 
+library(janitor) # cleaning data 
+library(stringr) # string manipulation 
+```
+
+```{r, data}
+# Import data into 
+data <- readxl::read_excel("../data/AMR_KAP_Coded.xlsx")
+
+# To check data structure 
+# glimpse(data)
+```
+
+```{r}
+# Convert response variables into factor 
+data$Knowledge_Level <- as.factor(data$Knowledge_Level)
+data$Attitude_Level <- as.factor(data$Attitude_Level)
+data$Practice_Level <- as.factor(data$Practice_Level)
+```
+
+```{r}
+# Select variables 
+df <- data %>% select(1:9, Knowledge_Level, Attitude_Level, Practice_Level)
+# Check data structure 
+glimpse(df)
+```
+
+```{r}
+# Factor Reorder 
+df %>% 
+  mutate_at(vars(Knowledge_Level), ~ fct_relevel(., c("Poor","Moderate", "Good"))) %>% 
+  mutate_at(vars(Attitude_Level), ~ fct_relevel(., c("Negative","Uncertain","Positive"))) %>%
+  mutate_at(vars(Practice_Level), ~ fct_relevel(., c("Misuse","Good")))
+```
+
+```{r}
+df %>% 
+  select(Knowledge_Level, Attitude_Level, Practice_Level) %>% 
+  tbl_summary()
+```
+```{r}
+model_knowledge <- polr(Knowledge_Level ~ `Parent’s age (years)`+`Parent’s sex`, 
+     data = df,  Hess = TRUE)
+
+model_knowledge %>% 
+  tbl_regression(
+    exponentiate = TRUE,
+    pvalue_fun = ~ style_pvalue(.x, digits = 2),
+  ) %>%
+  bold_p(t = 0.05) %>%
+  bold_labels() %>%
+  italicize_levels()
+```
+
+
+
+
+
